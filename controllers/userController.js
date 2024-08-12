@@ -1,9 +1,11 @@
 const multer = require('multer');
+const { Op } = require('sequelize');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const factory = require('./handlerFactory');
 const fileHelper = require('../utils/fileHelper');
+const Pegawai = require('../models/pegawaiModel');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -96,7 +98,52 @@ exports.updateUserPhoto = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getAllUsers = factory.getAll(User);
+exports.getAllUsers = catchAsync(async (req, res, next) => {
+  const { page = 1, limit = 10, keyword = '' } = req.query;
+
+  const offset = (page - 1) * limit;
+
+  let whereClause = {};
+  if (keyword) {
+    whereClause = {
+      where: {
+        title: {
+          [Op.like]: `%${keyword}%`,
+        },
+      },
+    };
+  }
+
+  const total = await User.count(whereClause);
+
+  let findAllOptions = {
+    limit: parseInt(limit, 10),
+    offset: parseInt(offset, 10),
+    include: [
+      {
+        model: Pegawai,
+      },
+    ],
+  };
+
+  if (keyword) {
+    findAllOptions = Object.assign(findAllOptions, whereClause);
+  }
+
+  const user = await User.findAll(findAllOptions);
+
+  res.status(200).json({
+    status: 'success',
+    results: User.length,
+    data: user,
+    meta: {
+      total,
+      per_page: parseInt(limit, 10),
+      current_page: parseInt(page, 10),
+    },
+  });
+});
+
 exports.getUser = factory.getOne(User);
 exports.createUser = factory.createOne(User);
 exports.updateUser = factory.updateOne(User); // Do not update passwords with this!

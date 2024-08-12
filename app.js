@@ -8,8 +8,11 @@ const imageRouter = require('./routes/imageRoutes');
 const fileRouter = require('./routes/fileRoutes');
 const regulasiRouter = require('./routes/regulasiRoutes');
 const indikatorRouter = require('./routes/indikatorRoutes');
+const pegawaiRouter = require('./routes/pegawaiRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errController');
+const User = require('./models/userModel');
+const Pegawai = require('./models/pegawaiModel');
 
 // test update
 const app = express();
@@ -25,6 +28,7 @@ app.use('/api/v1/image', imageRouter);
 app.use('/api/v1/file', fileRouter);
 app.use('/api/v1/regulations', regulasiRouter);
 app.use('/api/v1/indicators', indikatorRouter);
+app.use('/api/v1/employees', pegawaiRouter);
 
 app.use('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
@@ -32,6 +36,9 @@ app.use('*', (req, res, next) => {
 const sequelize = require('./utils/database');
 
 // Relasi antar tabel
+// relasi user dan pegawaiq
+User.belongsTo(Pegawai, { foreignKey: 'pegawaiId' });
+Pegawai.hasOne(User, { foreignKey: 'pegawaiId' });
 
 const sync = async () => await sequelize.sync({ force: false });
 sync()

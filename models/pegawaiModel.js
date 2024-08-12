@@ -7,7 +7,7 @@ const Pegawai = sequelize.define('Pegawai', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  NIP: {
+  nip: {
     type: DataTypes.STRING,
     allowNull: false,
   },
@@ -17,27 +17,27 @@ const Pegawai = sequelize.define('Pegawai', {
   },
   tgl_lahir: {
     type: DataTypes.DATE,
-    allowNull: false,
+    allowNull: true,
   },
   alamat: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
   jabatan: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
   jenis_kelamin: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
   nomor_telepon: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
   foto: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
 });
 
