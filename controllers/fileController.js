@@ -3,7 +3,6 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const fileHelper = require('../utils/fileHelper');
 
-const File = require('../models/fileModel');
 require('dotenv').config();
 
 const multerStorage = multer.memoryStorage();
@@ -46,14 +45,10 @@ exports.createFile = catchAsync(async (req, res, next) => {
     url = uploadedFile.secure_url;
   }
 
-  const fileRecord = await File.create({
-    file: url.replace('.pdf', ''),
-  });
-
   res.status(201).json({
     status: 'success',
     data: {
-      file: fileRecord,
+      file: url.replace('.pdf', ''),
     },
   });
 });

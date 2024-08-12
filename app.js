@@ -31,6 +31,8 @@ app.use('*', (req, res, next) => {
 });
 const sequelize = require('./utils/database');
 
+// Relasi antar tabel
+
 const sync = async () => await sequelize.sync({ force: false });
 sync()
   .then(() => {
