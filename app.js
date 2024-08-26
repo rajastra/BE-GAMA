@@ -9,10 +9,14 @@ const fileRouter = require('./routes/fileRoutes');
 const regulasiRouter = require('./routes/regulasiRoutes');
 const indikatorRouter = require('./routes/indikatorRoutes');
 const pegawaiRouter = require('./routes/pegawaiRoutes');
+const presensiRouter = require('./routes/presensiRoutes');
+const izinRouter = require('./routes/izinRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errController');
 const User = require('./models/userModel');
 const Pegawai = require('./models/pegawaiModel');
+const Presensi = require('./models/presensiModel');
+const Izin = require('./models/izinModel');
 
 // test update
 const app = express();
@@ -29,6 +33,8 @@ app.use('/api/v1/file', fileRouter);
 app.use('/api/v1/regulations', regulasiRouter);
 app.use('/api/v1/indicators', indikatorRouter);
 app.use('/api/v1/employees', pegawaiRouter);
+app.use('/api/v1/attendence', presensiRouter);
+app.use('/api/v1/permissions', izinRouter);
 
 app.use('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
@@ -39,6 +45,14 @@ const sequelize = require('./utils/database');
 // relasi user dan pegawaiq
 User.belongsTo(Pegawai, { foreignKey: 'pegawaiId' });
 Pegawai.hasOne(User, { foreignKey: 'pegawaiId' });
+
+//relasi pegawai dan presensi
+Presensi.belongsTo(Pegawai, { foreignKey: 'pegawaiId' });
+Pegawai.hasMany(Presensi, { foreignKey: 'pegawaiId' });
+
+//relasi pegawai dan pengajuan izin
+Izin.belongsTo(Pegawai, { foreignKey: 'pegawaiId' });
+Pegawai.hasMany(Izin, { foreignKey: 'pegawaiId' });
 
 const sync = async () => await sequelize.sync({ force: false });
 sync()
