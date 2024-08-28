@@ -11,6 +11,7 @@ const indikatorRouter = require('./routes/indikatorRoutes');
 const pegawaiRouter = require('./routes/pegawaiRoutes');
 const presensiRouter = require('./routes/presensiRoutes');
 const izinRouter = require('./routes/izinRoutes');
+const documentRouter = require('./routes/documentRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errController');
 const User = require('./models/userModel');
@@ -35,11 +36,13 @@ app.use('/api/v1/indicators', indikatorRouter);
 app.use('/api/v1/employees', pegawaiRouter);
 app.use('/api/v1/attendence', presensiRouter);
 app.use('/api/v1/permissions', izinRouter);
+app.use('/api/v1/document', documentRouter);
 
 app.use('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 const sequelize = require('./utils/database');
+const Document = require('./models/documentModel');
 
 // Relasi antar tabel
 // relasi user dan pegawaiq
@@ -53,6 +56,10 @@ Pegawai.hasMany(Presensi, { foreignKey: 'pegawaiId' });
 //relasi pegawai dan pengajuan izin
 Izin.belongsTo(Pegawai, { foreignKey: 'pegawaiId' });
 Pegawai.hasMany(Izin, { foreignKey: 'pegawaiId' });
+
+//relasi pegawai dan dokumen
+Document.belongsTo(Pegawai, { foreignKey: 'pegawaiId' });
+Pegawai.hasMany(Document, { foreignKey: 'pegawaiId' });
 
 const sync = async () => await sequelize.sync({ force: false });
 sync()
