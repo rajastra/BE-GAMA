@@ -17,19 +17,19 @@ const Pegawai = sequelize.define('Pegawai', {
   },
   tgl_lahir: {
     type: DataTypes.DATE,
-    allowNull: true,
+    allowNull: false,
   },
   alamat: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
   jabatan: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
   jenis_kelamin: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
   nomor_telepon: {
     type: DataTypes.STRING,
