@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const Dokumen = require('../models/documentModel');
 
 const Pegawai = require('../models/pegawaiModel');
 const handlerFactory = require('./handlerFactory');
@@ -76,7 +77,13 @@ exports.updatePegawai = catchAsync(async (req, res, next) => {
 });
 
 exports.getPegawai = catchAsync(async (req, res, next) => {
-  const pegawai = await Pegawai.findByPk(req.params.id);
+  const pegawai = await Pegawai.findByPk(req.params.id, {
+    include: [
+      {
+        model: Dokumen,
+      },
+    ],
+  });
 
   if (!pegawai) {
     return next(new AppError('No document found with that ID', 404));
