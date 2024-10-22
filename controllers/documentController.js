@@ -8,24 +8,25 @@ const Pegawai = require('../models/pegawaiModel');
 require('dotenv').config();
 
 exports.getAllDocument = catchAsync(async (req, res, next) => {
-  const { page = 1, limit = 10, keyword = '' } = req.query;
+  const { page = 1, limit = 10, keyword = '', pegawaiId } = req.query;
 
   const offset = (page - 1) * limit;
 
-  let whereClause = {};
+  const whereClause = {};
   if (keyword) {
-    whereClause = {
-      where: {
-        nama: {
-          [Op.like]: `%${keyword}%`,
-        },
-      },
+    whereClause.nama = {
+      [Op.like]: `%${keyword}%`,
     };
   }
 
-  const total = await Document.count(whereClause);
+  if (pegawaiId) {
+    whereClause.pegawaiId = pegawaiId;
+  }
 
-  let findAllOptions = {
+  const total = await Document.count({ where: whereClause });
+
+  const findAllOptions = {
+    where: whereClause,
     limit: parseInt(limit, 10),
     offset: parseInt(offset, 10),
     include: [
@@ -34,10 +35,6 @@ exports.getAllDocument = catchAsync(async (req, res, next) => {
       },
     ],
   };
-
-  if (keyword) {
-    findAllOptions = Object.assign(findAllOptions, whereClause);
-  }
 
   const document = await Document.findAll(findAllOptions);
 
@@ -52,6 +49,7 @@ exports.getAllDocument = catchAsync(async (req, res, next) => {
     },
   });
 });
+
 exports.createDocument = catchAsync(async (req, res, next) => {
   const document = await Document.create(req.body);
 
