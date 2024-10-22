@@ -107,7 +107,7 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
   if (keyword) {
     whereClause = {
       where: {
-        title: {
+        username: {
           [Op.like]: `%${keyword}%`,
         },
       },
