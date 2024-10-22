@@ -37,7 +37,7 @@ exports.createFile = catchAsync(async (req, res, next) => {
   let url = '';
 
   if (file) {
-    const uploadedFile = await fileHelper.upload(file.buffer);
+    const uploadedFile = await fileHelper.uploadFile(file.buffer);
     if (!uploadedFile) {
       return next(new AppError('Error uploading file', 400));
     }
