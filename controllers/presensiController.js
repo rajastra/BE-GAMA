@@ -8,18 +8,49 @@ const Pegawai = require('../models/pegawaiModel');
 require('dotenv').config();
 
 exports.getAllPresensi = catchAsync(async (req, res, next) => {
-  const { page = 1, limit = 10, keyword = '' } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    keyword = '',
+    tanggalMulai,
+    tanggalAkhir,
+  } = req.query;
 
   const offset = (page - 1) * limit;
 
   let whereClause = {};
-  if (keyword) {
+  if (keyword || tanggalMulai || tanggalAkhir) {
     whereClause = {
       where: {
-        title: {
-          [Op.like]: `%${keyword}%`,
-        },
+        [Op.and]: [
+          keyword
+            ? {
+                '$Pegawai.nama$': {
+                  [Op.like]: `%${keyword}%`,
+                },
+              }
+            : {},
+          tanggalMulai
+            ? {
+                tgl_absensi: {
+                  [Op.gte]: new Date(tanggalMulai),
+                },
+              }
+            : {},
+          tanggalAkhir
+            ? {
+                tgl_absensi: {
+                  [Op.lte]: new Date(tanggalAkhir),
+                },
+              }
+            : {},
+        ],
       },
+      include: [
+        {
+          model: Pegawai,
+        },
+      ],
     };
   }
 
@@ -35,7 +66,7 @@ exports.getAllPresensi = catchAsync(async (req, res, next) => {
     ],
   };
 
-  if (keyword) {
+  if (keyword || tanggalMulai || tanggalAkhir) {
     findAllOptions = Object.assign(findAllOptions, whereClause);
   }
 
@@ -54,7 +85,20 @@ exports.getAllPresensi = catchAsync(async (req, res, next) => {
 });
 
 exports.createPresensi = catchAsync(async (req, res, next) => {
-  const presensi = await Presensi.create(req.body);
+  // get presensi data from model get first data for today
+  const presensiToday = await Presensi.findOne({
+    where: {
+      tgl_absensi: new Date(),
+    },
+  });
+
+  // if presensi data for today is exist, return error
+  if (presensiToday) {
+    return next(new AppError('Presensi for today already exist', 400));
+  }
+
+  const presensiData = Array.isArray(req.body) ? req.body : [req.body];
+  const presensi = await Presensi.bulkCreate(presensiData);
 
   res.status(201).json({
     status: 'success',
