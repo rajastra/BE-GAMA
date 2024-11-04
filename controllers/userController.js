@@ -103,14 +103,30 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
 
   const offset = (page - 1) * limit;
 
+  console.log(keyword);
+
   let whereClause = {};
   if (keyword) {
     whereClause = {
       where: {
-        title: {
-          [Op.like]: `%${keyword}%`,
-        },
+        [Op.or]: [
+          {
+            email: {
+              [Op.like]: `%${keyword}%`,
+            },
+          },
+          {
+            '$Pegawai.nama$': {
+              [Op.like]: `%${keyword}%`,
+            },
+          },
+        ],
       },
+      include: [
+        {
+          model: Pegawai,
+        },
+      ],
     };
   }
 
