@@ -15,7 +15,7 @@ exports.getAllPegawai = catchAsync(async (req, res, next) => {
   if (keyword) {
     whereClause = {
       where: {
-        title: {
+        nama: {
           [Op.like]: `%${keyword}%`,
         },
       },
