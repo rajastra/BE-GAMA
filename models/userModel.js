@@ -17,10 +17,6 @@ const User = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    username: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     password: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -29,10 +25,6 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: 'user',
-    },
-    photo: {
-      type: DataTypes.STRING,
-      allowNull: true,
     },
   },
   { timestamps: false }

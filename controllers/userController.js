@@ -21,10 +21,26 @@ const filterObj = (obj, ...allowedFields) => {
   return newObj;
 };
 
-exports.getMe = (req, res, next) => {
-  req.params.id = req.user.id;
-  next();
-};
+exports.getMe = catchAsync(async (req, res, next) => {
+  // req.params.id = req.user.id;
+  // next();
+  const user = await User.findByPk(req.params.id, {
+    include: [
+      {
+        model: Pegawai,
+      },
+    ],
+  });
+
+  if (!user) {
+    return next(new AppError('No document found with that ID', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: user,
+  });
+});
 
 exports.updateMe = catchAsync(async (req, res, next) => {
   // Create error if user POSTs password data
@@ -160,7 +176,21 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getUser = factory.getOne(User);
+exports.getUser = catchAsync(async (req, res, next) => {
+  const user = await User.findByPk(req.params.id, {
+    include: [Pegawai],
+  });
+
+  if (!user) {
+    return next(new AppError('No user found with that ID', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: user,
+  });
+});
+
 exports.createUser = factory.createOne(User);
 exports.updateUser = factory.updateOne(User); // Do not update passwords with this!
 exports.deleteUser = factory.deleteOne(User);

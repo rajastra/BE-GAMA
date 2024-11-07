@@ -81,7 +81,13 @@ exports.updateIzin = catchAsync(async (req, res, next) => {
 });
 
 exports.getIzin = catchAsync(async (req, res, next) => {
-  const izin = await Izin.findByPk(req.params.id);
+  const izin = await Izin.findByPk(req.params.id, {
+    include: [
+      {
+        model: Pegawai,
+      },
+    ],
+  });
 
   if (!izin) {
     return next(new AppError('No document found with that ID', 404));

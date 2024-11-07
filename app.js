@@ -45,7 +45,7 @@ const sequelize = require('./utils/database');
 const Document = require('./models/documentModel');
 
 // Relasi antar tabel
-// relasi user dan pegawaiq
+// relasi user dan pegawai
 User.belongsTo(Pegawai, { foreignKey: 'pegawaiId' });
 Pegawai.hasOne(User, { foreignKey: 'pegawaiId' });
 
