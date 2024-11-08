@@ -138,4 +138,109 @@ exports.getPresensi = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getRecap = catchAsync(async (req, res, next) => {
+  const {
+    page = 1,
+    limit = 10,
+    keyword = '',
+    tanggalMulai,
+    tanggalAkhir,
+  } = req.query;
+
+  const offset = (page - 1) * limit;
+
+  // Initialize where clause for Pegawai filtering
+  const pegawaiWhereClause = {};
+
+  // Add keyword filter if provided
+  if (keyword) {
+    pegawaiWhereClause.nama = {
+      [Op.iLike]: `%${keyword}%`,
+    };
+  }
+
+  // Define where clause for Presensi filtering by date range
+  const presensiWhereClause = {};
+  if (tanggalMulai) {
+    presensiWhereClause.tgl_absensi = {
+      [Op.gte]: new Date(tanggalMulai),
+    };
+  }
+  if (tanggalAkhir) {
+    presensiWhereClause.tgl_absensi = {
+      // eslint-disable-next-line
+      ...presensiWhereClause.tgl_absensi,
+      [Op.lte]: new Date(tanggalAkhir),
+    };
+  }
+
+  // Count total records for pagination
+  const total = await Pegawai.count({
+    where: pegawaiWhereClause,
+    include: [
+      {
+        model: Presensi,
+        where: presensiWhereClause,
+        required: false,
+      },
+    ],
+  });
+
+  // Retrieve paginated data with filters
+  const pegawai = await Pegawai.findAll({
+    where: pegawaiWhereClause,
+    limit: parseInt(limit, 10),
+    offset: parseInt(offset, 10),
+    include: [
+      {
+        model: Presensi,
+        attributes: ['status', 'tgl_absensi'],
+        where: presensiWhereClause,
+        required: false,
+      },
+    ],
+  });
+
+  // Process the data to generate summary counts
+  const summary = pegawai.map((karyawan) => {
+    const totalRecords = karyawan.Presensis.length;
+    const hadirCount = karyawan.Presensis.filter(
+      (presensi) => presensi.status === 'Hadir'
+    ).length;
+    const izinCount = karyawan.Presensis.filter(
+      (presensi) => presensi.status === 'Izin'
+    ).length;
+    const sakitCount = karyawan.Presensis.filter(
+      (presensi) => presensi.status === 'Sakit'
+    ).length;
+    const alpaCount = karyawan.Presensis.filter(
+      (presensi) => presensi.status === 'Alpa'
+    ).length;
+
+    const akumulasi = totalRecords > 0 ? (hadirCount / totalRecords) * 100 : 0;
+
+    return {
+      nama: karyawan.nama,
+      nip: karyawan.nip,
+      hadir: hadirCount,
+      izin: izinCount,
+      sakit: sakitCount,
+      alpa: alpaCount,
+      akumulasi: akumulasi.toFixed(2),
+    };
+  });
+
+  // Return the result with pagination metadata
+  res.status(200).json({
+    status: 'success',
+    data: summary,
+    meta: {
+      total,
+      per_page: parseInt(limit, 10),
+      current_page: parseInt(page, 10),
+      total_pages: Math.ceil(total / limit),
+    },
+  });
+});
+
 exports.deletePresensi = handlerFactory.deleteOne(Presensi);
