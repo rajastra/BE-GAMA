@@ -5,6 +5,7 @@ const AppError = require('../utils/appError');
 const Presensi = require('../models/presensiModel');
 const handlerFactory = require('./handlerFactory');
 const Pegawai = require('../models/pegawaiModel');
+const sequelize = require('../utils/database');
 require('dotenv').config();
 
 exports.getAllPresensi = catchAsync(async (req, res, next) => {
@@ -86,9 +87,23 @@ exports.getAllPresensi = catchAsync(async (req, res, next) => {
 
 exports.createPresensi = catchAsync(async (req, res, next) => {
   // get presensi data from model get first data for today
+  const today = new Date();
+  const todayDate = today.toISOString().split('T')[0];
+
   const presensiToday = await Presensi.findOne({
     where: {
-      tgl_absensi: new Date(),
+      [Op.and]: [
+        {
+          tgl_absensi: {
+            [Op.gte]: new Date(todayDate),
+          },
+        },
+        {
+          tgl_absensi: {
+            [Op.lte]: new Date(todayDate),
+          },
+        },
+      ],
     },
   });
 
@@ -240,6 +255,62 @@ exports.getRecap = catchAsync(async (req, res, next) => {
       current_page: parseInt(page, 10),
       total_pages: Math.ceil(total / limit),
     },
+  });
+});
+
+exports.getPresensiDB = catchAsync(async (req, res, next) => {
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0]; // format YYYY-MM-DD
+  };
+  const { tanggal = getTodayDate() } = req.query;
+
+  const countPegawai = await Pegawai.count();
+
+  // Mengambil data total status untuk tanggal yang difilter
+  const rekapStatus = await Presensi.findAll({
+    attributes: [
+      'status',
+      [sequelize.fn('COUNT', sequelize.col('status')), 'count'],
+    ],
+    where: {
+      [Op.and]: [
+        {
+          tgl_absensi: {
+            [Op.gte]: new Date(tanggal),
+          },
+        },
+        {
+          tgl_absensi: {
+            [Op.lte]: new Date(tanggal),
+          },
+        },
+      ],
+    },
+    group: ['status'],
+  });
+
+  // Inisialisasi hasil rekap dengan total status awal
+  const hasilRekap = {
+    pegawai: countPegawai,
+    total: 0,
+    hadir: 0,
+    sakit: 0,
+    izin: 0,
+    alpa: 0,
+  };
+
+  // Memproses hasil query untuk menghitung total tiap status
+  rekapStatus.forEach((record) => {
+    const { status, count } = record.dataValues;
+
+    hasilRekap[status.toLowerCase()] = parseInt(count, 10);
+    hasilRekap.total += parseInt(count, 10);
+  });
+
+  res.status(200).json({
+    status: 'success',
+    data: hasilRekap,
   });
 });
 
