@@ -12,12 +12,27 @@ exports.getAllPegawai = catchAsync(async (req, res, next) => {
   const offset = (page - 1) * limit;
 
   let whereClause = {};
+  console.log(keyword);
   if (keyword) {
     whereClause = {
       where: {
-        nama: {
-          [Op.like]: `%${keyword}%`,
-        },
+        [Op.or]: [
+          {
+            nama: {
+              [Op.iLike]: `%${keyword}%`,
+            },
+          },
+          {
+            nip: {
+              [Op.like]: `%${keyword}%`,
+            },
+          },
+          {
+            jabatan: {
+              [Op.iLike]: `%${keyword}%`,
+            },
+          },
+        ],
       },
     };
   }

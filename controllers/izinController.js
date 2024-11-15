@@ -16,10 +16,19 @@ exports.getAllIzin = catchAsync(async (req, res, next) => {
   if (keyword) {
     whereClause = {
       where: {
-        nama: {
-          [Op.like]: `%${keyword}%`,
-        },
+        [Op.or]: [
+          {
+            '$Pegawai.nama$': {
+              [Op.iLike]: `%${keyword}%`,
+            },
+          },
+        ],
       },
+      include: [
+        {
+          model: Pegawai,
+        },
+      ],
     };
   }
 
