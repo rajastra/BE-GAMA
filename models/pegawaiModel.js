@@ -9,7 +9,7 @@ const Pegawai = sequelize.define('Pegawai', {
   },
   nip: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
   nama: {
     type: DataTypes.STRING,
@@ -21,7 +21,7 @@ const Pegawai = sequelize.define('Pegawai', {
   },
   alamat: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
   jabatan: {
     type: DataTypes.STRING,
