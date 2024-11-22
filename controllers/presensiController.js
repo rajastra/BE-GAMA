@@ -1,7 +1,6 @@
-const { Op } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-
 const Presensi = require('../models/presensiModel');
 const handlerFactory = require('./handlerFactory');
 const Pegawai = require('../models/pegawaiModel');
@@ -86,33 +85,20 @@ exports.getAllPresensi = catchAsync(async (req, res, next) => {
 });
 
 exports.createPresensi = catchAsync(async (req, res, next) => {
-  // get presensi data from model get first data for today
-  const today = new Date();
-  const todayDate = today.toISOString().split('T')[0];
+  const presensiData = Array.isArray(req.body) ? req.body : [req.body];
+  const dateArray = presensiData[0].tgl_absensi;
 
   const presensiToday = await Presensi.findOne({
     where: {
-      [Op.and]: [
-        {
-          tgl_absensi: {
-            [Op.gte]: new Date(todayDate),
-          },
-        },
-        {
-          tgl_absensi: {
-            [Op.lte]: new Date(todayDate),
-          },
-        },
-      ],
+      [Op.and]: [sequelize.where(fn('DATE', col('tgl_absensi')), dateArray)],
     },
   });
 
   // if presensi data for today is exist, return error
   if (presensiToday) {
-    return next(new AppError('Presensi for today already exist', 400));
+    return next(new AppError(`Presensi for ${dateArray} already exist`, 400));
   }
 
-  const presensiData = Array.isArray(req.body) ? req.body : [req.body];
   const presensi = await Presensi.bulkCreate(presensiData);
 
   res.status(201).json({

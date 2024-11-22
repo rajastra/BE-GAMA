@@ -116,10 +116,7 @@ exports.updateUserPhoto = catchAsync(async (req, res, next) => {
 
 exports.getAllUsers = catchAsync(async (req, res, next) => {
   const { page = 1, limit = 10, keyword = '' } = req.query;
-
   const offset = (page - 1) * limit;
-
-  console.log(keyword);
 
   let whereClause = {};
   if (keyword) {
