@@ -203,26 +203,26 @@ exports.getRecap = catchAsync(async (req, res, next) => {
   });
 
   // Process the data to generate summary counts
-  const summary = pegawai.map((karyawan) => {
-    const totalRecords = karyawan.Presensis.length;
-    const hadirCount = karyawan.Presensis.filter(
+  const summary = pegawai.map((x) => {
+    const totalRecords = x.Presensis.length;
+    const hadirCount = x.Presensis.filter(
       (presensi) => presensi.status === 'Hadir'
     ).length;
-    const izinCount = karyawan.Presensis.filter(
+    const izinCount = x.Presensis.filter(
       (presensi) => presensi.status === 'Izin'
     ).length;
-    const sakitCount = karyawan.Presensis.filter(
+    const sakitCount = x.Presensis.filter(
       (presensi) => presensi.status === 'Sakit'
     ).length;
-    const alpaCount = karyawan.Presensis.filter(
+    const alpaCount = x.Presensis.filter(
       (presensi) => presensi.status === 'Alpa'
     ).length;
 
     const akumulasi = totalRecords > 0 ? (hadirCount / totalRecords) * 100 : 0;
 
     return {
-      nama: karyawan.nama,
-      nip: karyawan.nip,
+      nama: x.nama,
+      nip: x.nip,
       hadir: hadirCount,
       izin: izinCount,
       sakit: sakitCount,

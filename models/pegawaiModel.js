@@ -38,6 +38,8 @@ const Pegawai = sequelize.define('Pegawai', {
   foto: {
     type: DataTypes.STRING,
     allowNull: true,
+    defaultValue:
+      'https://res.cloudinary.com/dpoukjavt/image/upload/v1732288853/gama/images/1732288851200.png',
   },
 });
 
