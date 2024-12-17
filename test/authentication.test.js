@@ -8,7 +8,7 @@ jest.mock('jsonwebtoken');
 jest.mock('../models/userModel');
 
 beforeAll(async () => {
-  await sequelize.sync({ force: true });
+  await sequelize.sync({ force: false });
 });
 
 afterAll(async () => {
