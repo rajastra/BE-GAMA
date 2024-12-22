@@ -15,7 +15,7 @@ afterAll(async () => {
   await sequelize.close();
 });
 
-describe('Authentication Controller', () => {
+describe('User Controller', () => {
   let mockReq;
   let mockRes;
   let mockNext;
@@ -33,18 +33,70 @@ describe('Authentication Controller', () => {
     process.env.JWT_EXPIRE_IN = '1d';
   });
 
-  describe('signup', () => {
-    it('should create a new user and send token', async () => {
-      // Prepare test data
-      const userData = {
+  describe('login', () => {
+    it('should login user success with correct credentials', async () => {
+      const loginData = {
         email: 'test@example.com',
         password: 'testpassword',
       };
 
-      // Create mock user
+      const mockUser = {
+        id: 'user-id',
+        email: loginData.email,
+        matchPassword: jest.fn().mockResolvedValue(true),
+      };
+
+      User.findOne = jest.fn().mockResolvedValue(mockUser);
+
+      const mockToken = 'fake-jwt-token';
+      jwt.sign = jest.fn().mockReturnValue(mockToken);
+
+      mockReq.body = loginData;
+
+      await authController.login(mockReq, mockRes, mockNext);
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        where: { email: loginData.email },
+      });
+      expect(mockUser.matchPassword).toHaveBeenCalledWith(loginData.password);
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        status: 'success',
+        token: mockToken,
+        data: {
+          user: expect.objectContaining({
+            email: 'test@example.com',
+          }),
+        },
+      });
+    });
+
+    it('should handle login errors', async () => {
+      mockReq.body = {};
+
+      await authController.login(mockReq, mockRes, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Mohon masukan email dan password anda',
+          statusCode: 400,
+        })
+      );
+    });
+
+    it('should create a new user account', async () => {
+      const userData = {
+        email: 'test@example.com',
+        password: 'testpassword',
+        role: 'admin',
+        pegawaiId: '123',
+      };
+
       const mockUser = {
         email: userData.email,
         password: userData.password,
+        role: userData.role,
+        pegawaiId: userData.pegawaiId,
         id: 'user-id',
         _id: 'user-id',
       };
@@ -76,68 +128,11 @@ describe('Authentication Controller', () => {
         data: {
           user: expect.objectContaining({
             email: 'test@example.com',
+            role: 'admin',
+            pegawaiId: '123',
           }),
         },
       });
-    });
-  });
-
-  describe('login', () => {
-    it('should login user with correct credentials', async () => {
-      // Prepare login data
-      const loginData = {
-        email: 'test@example.com',
-        password: 'testpassword',
-      };
-
-      // Create mock user
-      const mockUser = {
-        id: 'user-id',
-        email: 'test@example.com',
-        matchPassword: jest.fn().mockResolvedValue(true),
-      };
-
-      User.findOne = jest.fn().mockResolvedValue(mockUser);
-
-      // Mock token generation
-      const mockToken = 'fake-jwt-token';
-      jwt.sign = jest.fn().mockReturnValue(mockToken);
-
-      // Set request body
-      mockReq.body = loginData;
-
-      // Call login method
-      await authController.login(mockReq, mockRes, mockNext);
-
-      // Assertions
-      expect(User.findOne).toHaveBeenCalledWith({
-        where: { email: loginData.email },
-      });
-      expect(mockUser.matchPassword).toHaveBeenCalledWith(loginData.password);
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        status: 'success',
-        token: mockToken,
-        data: {
-          user: expect.objectContaining({
-            email: 'test@example.com',
-          }),
-        },
-      });
-    });
-
-    it('should handle login errors', async () => {
-      // Test missing credentials
-      mockReq.body = {};
-
-      await authController.login(mockReq, mockRes, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Mohon masukan email dan password anda',
-          statusCode: 400,
-        })
-      );
     });
   });
 });
