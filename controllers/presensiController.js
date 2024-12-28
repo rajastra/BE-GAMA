@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 const { Op, fn, col } = require('sequelize');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
@@ -301,3 +302,47 @@ exports.getPresensiDB = catchAsync(async (req, res, next) => {
 });
 
 exports.deletePresensi = handlerFactory.deleteOne(Presensi);
+
+exports.signaturePad = catchAsync(async (req, res, next) => {
+  const { pegawaiId, tgl_absensi, lampiran, status } = req.body;
+
+  // Validate required fields
+  if (!pegawaiId || !tgl_absensi) {
+    return next(new AppError('Please provide all required fields', 400));
+  }
+
+  // Verify pegawai exists
+  const pegawai = await Pegawai.findByPk(pegawaiId);
+  if (!pegawai) {
+    return next(new AppError('Employee not found', 404));
+  }
+
+  // Check if employee already has attendance record for this date
+  const alreadyPresensi = await Presensi.findOne({
+    where: {
+      pegawaiId,
+      tgl_absensi: new Date(tgl_absensi),
+    },
+  });
+
+  if (alreadyPresensi) {
+    return next(
+      new AppError('Employee already has attendance record for this date', 400)
+    );
+  }
+
+  // Create presensi record
+  const presensi = await Presensi.create({
+    pegawaiId,
+    tgl_absensi: new Date(tgl_absensi),
+    lampiran,
+    status,
+  });
+
+  res.status(201).json({
+    status: 'success',
+    data: {
+      presensi,
+    },
+  });
+});
