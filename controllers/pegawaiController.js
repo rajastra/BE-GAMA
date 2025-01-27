@@ -12,7 +12,6 @@ exports.getAllPegawai = catchAsync(async (req, res, next) => {
   const offset = (page - 1) * limit;
 
   let whereClause = {};
-  console.log(keyword);
   if (keyword) {
     whereClause = {
       where: {

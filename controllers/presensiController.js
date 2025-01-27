@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-const { Op, fn, col } = require('sequelize');
+const { Op } = require('sequelize');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const Presensi = require('../models/presensiModel');
@@ -85,40 +85,13 @@ exports.getAllPresensi = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.createPresensi = catchAsync(async (req, res, next) => {
-  const presensiData = Array.isArray(req.body) ? req.body : [req.body];
-  const dateArray = presensiData[0].tgl_absensi;
-
-  const presensiToday = await Presensi.findOne({
-    where: {
-      [Op.and]: [sequelize.where(fn('DATE', col('tgl_absensi')), dateArray)],
-    },
-  });
-
-  // if presensi data for today is exist, return error
-  if (presensiToday) {
-    return next(new AppError(`Presensi for ${dateArray} already exist`, 400));
-  }
-
-  const presensi = await Presensi.bulkCreate(presensiData);
-
-  res.status(201).json({
-    status: 'success',
-    data: {
-      presensi: presensi,
-    },
-  });
-});
-
 exports.updatePresensi = catchAsync(async (req, res, next) => {
-  // Find the berita record by ID
   const presensi = await Presensi.findByPk(req.params.id);
 
   if (!presensi) {
     return next(new AppError('No document found with that ID', 404));
   }
 
-  // Update the berita record with the new data
   await presensi.update(req.body);
 
   res.status(200).json({
@@ -151,17 +124,14 @@ exports.getRecap = catchAsync(async (req, res, next) => {
 
   const offset = (page - 1) * limit;
 
-  // Initialize where clause for Pegawai filtering
   const pegawaiWhereClause = {};
 
-  // Add keyword filter if provided
   if (keyword) {
     pegawaiWhereClause.nama = {
       [Op.iLike]: `%${keyword}%`,
     };
   }
 
-  // Define where clause for Presensi filtering by date range
   const presensiWhereClause = {};
   if (tanggalMulai) {
     presensiWhereClause.tgl_absensi = {
@@ -176,7 +146,6 @@ exports.getRecap = catchAsync(async (req, res, next) => {
     };
   }
 
-  // Count total records for pagination
   const total = await Pegawai.count({
     where: pegawaiWhereClause,
     include: [
@@ -188,7 +157,6 @@ exports.getRecap = catchAsync(async (req, res, next) => {
     ],
   });
 
-  // Retrieve paginated data with filters
   const pegawai = await Pegawai.findAll({
     where: pegawaiWhereClause,
     limit: parseInt(limit, 10),
@@ -203,7 +171,6 @@ exports.getRecap = catchAsync(async (req, res, next) => {
     ],
   });
 
-  // Process the data to generate summary counts
   const summary = pegawai.map((x) => {
     const totalRecords = x.Presensis.length;
     const hadirCount = x.Presensis.filter(
@@ -232,7 +199,6 @@ exports.getRecap = catchAsync(async (req, res, next) => {
     };
   });
 
-  // Return the result with pagination metadata
   res.status(200).json({
     status: 'success',
     data: summary,
@@ -248,13 +214,12 @@ exports.getRecap = catchAsync(async (req, res, next) => {
 exports.getPresensiDB = catchAsync(async (req, res, next) => {
   const getTodayDate = () => {
     const today = new Date();
-    return today.toISOString().split('T')[0]; // format YYYY-MM-DD
+    return today.toISOString().split('T')[0];
   };
   const { tanggal = getTodayDate() } = req.query;
 
   const countPegawai = await Pegawai.count();
 
-  // Mengambil data total status untuk tanggal yang difilter
   const rekapStatus = await Presensi.findAll({
     attributes: [
       'status',
@@ -287,7 +252,6 @@ exports.getPresensiDB = catchAsync(async (req, res, next) => {
     alpa: 0,
   };
 
-  // Memproses hasil query untuk menghitung total tiap status
   rekapStatus.forEach((record) => {
     const { status, count } = record.dataValues;
 
@@ -303,21 +267,18 @@ exports.getPresensiDB = catchAsync(async (req, res, next) => {
 
 exports.deletePresensi = handlerFactory.deleteOne(Presensi);
 
-exports.signaturePad = catchAsync(async (req, res, next) => {
+exports.createPresensi = catchAsync(async (req, res, next) => {
   const { pegawaiId, tgl_absensi, lampiran, status } = req.body;
 
-  // Validate required fields
-  if (!pegawaiId || !tgl_absensi) {
+  if (!pegawaiId || !tgl_absensi || !lampiran) {
     return next(new AppError('Please provide all required fields', 400));
   }
 
-  // Verify pegawai exists
   const pegawai = await Pegawai.findByPk(pegawaiId);
   if (!pegawai) {
     return next(new AppError('Employee not found', 404));
   }
 
-  // Check if employee already has attendance record for this date
   const alreadyPresensi = await Presensi.findOne({
     where: {
       pegawaiId,
@@ -331,7 +292,6 @@ exports.signaturePad = catchAsync(async (req, res, next) => {
     );
   }
 
-  // Create presensi record
   const presensi = await Presensi.create({
     pegawaiId,
     tgl_absensi: new Date(tgl_absensi),
