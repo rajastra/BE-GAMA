@@ -1,6 +1,8 @@
+/* eslint-disable no-plusplus */
 /* eslint-disable no-await-in-loop */
 const { Op } = require('sequelize');
 const moment = require('moment');
+const Holidays = require('date-holidays');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const Izin = require('../models/izinModel');
@@ -10,31 +12,29 @@ const Presensi = require('../models/presensiModel');
 require('dotenv').config();
 
 const createPresensiWithRangeDate = async (izinData) => {
+  const holidays = new Holidays('ID');
   const tglMulai = moment(izinData.tgl_mulai);
   const tglSelesai = moment(izinData.tgl_selesai);
   const totalIzin = tglSelesai.diff(tglMulai, 'days') + 1;
-
-  for (let i = 0; i < totalIzin; i) {
+  for (let i = 0; i < totalIzin; i++) {
     const currentDate = moment(tglMulai).add(i, 'days');
+    const date = currentDate.format('YYYY-MM-DD');
 
-    if (currentDate.days() !== 0 && currentDate.days() !== 6) {
+    const isWeekend = currentDate.days() === 0 || currentDate.days() === 6;
+    const isHoliday = holidays.isHoliday(new Date(date));
+
+    if (!isWeekend && !isHoliday) {
       const presensiData = {
         pegawaiId: izinData.pegawaiId,
-        tgl_absensi: currentDate.format('YYYY-MM-DD'),
+        tgl_absensi: date,
         status: izinData.jenis,
         lampiran: izinData.lampiran,
       };
-      console.log(presensiData);
 
       try {
         await Presensi.create(presensiData);
       } catch (error) {
-        console.error(
-          `Failed to create presensi for date ${currentDate.format(
-            'YYYY-MM-DD'
-          )}:`,
-          error
-        );
+        console.error(`Failed to create presensi for date ${date}:`, error);
         throw new AppError('Failed to create attendance records', 500);
       }
     }
@@ -128,6 +128,7 @@ exports.updateStatusIzin = catchAsync(async (req, res, next) => {
   const izin = await Izin.findByPk(req.params.id, {
     include: [{ model: Pegawai }],
   });
+
   if (!izin) {
     return next(new AppError('No permission record found with that ID', 404));
   }
