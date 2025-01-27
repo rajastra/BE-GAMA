@@ -1,6 +1,7 @@
 const sequelize = require('../utils/database');
 const presensiController = require('../controllers/presensiController');
 const Presensi = require('../models/presensiModel');
+const Pegawai = require('../models/pegawaiModel');
 const AppError = require('../utils/appError');
 
 jest.mock('../models/pegawaiModel');
@@ -20,83 +21,90 @@ describe('Presensi Controller', () => {
   let mockNext;
 
   beforeEach(() => {
-    mockReq = { body: {} };
+    jest.clearAllMocks();
+
+    mockReq = {
+      body: {
+        pegawaiId: 'test-uuid',
+        tgl_absensi: '2025-01-02',
+        lampiran: 'base64-signature-data',
+        status: 'Hadir',
+      },
+    };
     mockRes = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
+
     mockNext = jest.fn();
   });
 
   describe('Add presensi', () => {
     it('should create new presensi success', async () => {
-      const presensiData = [
-        {
-          status: 'Hadir',
-          tgl_absensi: '2024-11-24',
-          pegawaiId: '123',
-        },
-      ];
+      Pegawai.findByPk.mockResolvedValue({
+        id: 'test-uuid',
+        nama: 'Test Employee',
+      });
 
-      const mockPresensi = [
-        {
-          status: presensiData[0].status,
-          tgl_absensi: presensiData[0].tgl_absensi,
-          pegawaiId: presensiData[0].pegawaiId,
-          id: 'presensi-id',
-        },
-      ];
+      Presensi.findOne.mockResolvedValue(null);
 
-      Presensi.findOne = jest.fn().mockResolvedValue(null);
-      Presensi.bulkCreate = jest.fn().mockResolvedValue(mockPresensi);
+      const mockPresensi = {
+        id: 'new-uuid',
+        pegawaiId: 'test-uuid',
+        tgl_absensi: new Date('2025-01-02'),
+        lampiran: 'base64-signature-data',
+        status: 'Hadir',
+      };
+      Presensi.create.mockResolvedValue(mockPresensi);
 
-      mockReq.body = presensiData;
-
+      // Execute the function
       await presensiController.createPresensi(mockReq, mockRes, mockNext);
 
-      expect(Presensi.findOne).toHaveBeenCalled();
-      expect(Presensi.bulkCreate).toHaveBeenCalledWith(presensiData);
+      expect(Pegawai.findByPk).toHaveBeenCalledWith('test-uuid');
+      expect(Presensi.findOne).toHaveBeenCalledWith({
+        where: {
+          pegawaiId: 'test-uuid',
+          tgl_absensi: new Date('2025-01-02'),
+        },
+      });
+      expect(Presensi.create).toHaveBeenCalledWith({
+        pegawaiId: 'test-uuid',
+        tgl_absensi: new Date('2025-01-02'),
+        lampiran: 'base64-signature-data',
+        status: 'Hadir',
+      });
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith({
         status: 'success',
         data: {
-          presensi: expect.arrayContaining([
-            expect.objectContaining({
-              status: 'Hadir',
-              tgl_absensi: '2024-11-24',
-              pegawaiId: '123',
-            }),
-          ]),
+          presensi: mockPresensi,
         },
       });
+      expect(mockNext).not.toHaveBeenCalled();
     });
     it('should return error if presensi already exists for the date', async () => {
-      const presensiData = [
-        {
-          status: 'Hadir',
-          tgl_absensi: '2024-11-24',
-          pegawaiId: '123',
-        },
-      ];
-
-      Presensi.findOne = jest.fn().mockResolvedValue({
-        id: 'existing-id',
-        status: 'Hadir',
-        tgl_absensi: '2024-11-24',
-        pegawaiId: '123',
+      Pegawai.findByPk.mockResolvedValue({
+        id: 'test-uuid',
+        nama: 'Test Employee',
       });
 
-      mockReq.body = presensiData;
+      // Mock existing presensi
+      Presensi.findOne.mockResolvedValue({
+        id: 'existing-uuid',
+        pegawaiId: 'test-uuid',
+        tgl_absensi: new Date('2025-01-02'),
+      });
 
+      // Execute the function
       await presensiController.createPresensi(mockReq, mockRes, mockNext);
 
-      expect(Presensi.findOne).toHaveBeenCalled();
+      // Assertions
       expect(mockNext).toHaveBeenCalledWith(expect.any(AppError));
-
-      const error = mockNext.mock.calls[0][0];
-      expect(error).toBeInstanceOf(AppError);
-      expect(error.message).toBe('Presensi for 2024-11-24 already exist');
-      expect(error.statusCode).toBe(400);
+      expect(mockNext.mock.calls[0][0].message).toBe(
+        'Employee already has attendance record for this date'
+      );
+      expect(mockNext.mock.calls[0][0].statusCode).toBe(400);
+      expect(Presensi.create).not.toHaveBeenCalled();
     });
   });
 });
