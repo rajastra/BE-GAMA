@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-restricted-syntax */
 /* eslint-disable camelcase */
 const { Op } = require('sequelize');
 const catchAsync = require('../utils/catchAsync');
@@ -305,4 +307,41 @@ exports.createPresensi = catchAsync(async (req, res, next) => {
       presensi,
     },
   });
+});
+
+exports.checkAttendanceStatus = catchAsync(async (req, res, next) => {
+  try {
+    const today = new Date().setHours(0, 0, 0, 0);
+    const todayEnd = new Date().setHours(23, 59, 59, 999);
+
+    const pegawais = await Pegawai.findAll({
+      include: [
+        {
+          model: Presensi,
+          where: {
+            tgl_absensi: {
+              [Op.gte]: today,
+              [Op.lte]: todayEnd,
+            },
+          },
+          required: false,
+        },
+      ],
+    });
+
+    for (const pegawai of pegawais) {
+      const presensis = pegawai.Presensis || [];
+
+      if (presensis.length === 0) {
+        await Presensi.create({
+          pegawaiId: pegawai.id,
+          tgl_absensi: new Date(new Date().toISOString().split('T')[0]),
+          status: 'Alpa',
+          lampiran: null,
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error in attendance check:', error);
+  }
 });

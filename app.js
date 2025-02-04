@@ -1,7 +1,9 @@
+/* eslint-disable prefer-template */
 const express = require('express');
+const axios = require('axios');
 const morgan = require('morgan');
 const cors = require('cors');
-
+const cron = require('node-cron');
 const userRouter = require('./routes/userRoutes');
 const galeriRouter = require('./routes/galeriRoutes');
 const imageRouter = require('./routes/imageRoutes');
@@ -21,6 +23,7 @@ const Izin = require('./models/izinModel');
 
 // test update
 const app = express();
+const URL = process.env.VITE_BASE_URL;
 
 // add cors
 app.use(cors());
@@ -60,6 +63,14 @@ Pegawai.hasMany(Izin, { foreignKey: 'pegawaiId' });
 //relasi pegawai dan dokumen
 Document.belongsTo(Pegawai, { foreignKey: 'pegawaiId' });
 Pegawai.hasMany(Document, { foreignKey: 'pegawaiId' });
+
+cron.schedule('00 18  * * 1-5', async () => {
+  try {
+    await axios.post(URL + `/api/v1/attendence/check-attendance`);
+  } catch (error) {
+    console.error('Error checking attendance:', error);
+  }
+});
 
 const sync = async () => await sequelize.sync({ force: false });
 sync()
