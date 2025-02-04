@@ -44,4 +44,12 @@ User.addHook('beforeCreate', async (user) => {
   user.password = encryptedPassword;
 });
 
+User.addHook('beforeSave', async (user) => {
+  const encryptedPassword = await bcrypt.hash(
+    user.password,
+    DEFAULT_SALT_ROUNDS
+  );
+  user.password = encryptedPassword;
+});
+
 module.exports = User;
