@@ -14,4 +14,6 @@ router
   .patch(izinController.updateIzin)
   .delete(izinController.deleteIzin);
 
+router.route('/:id/status').patch(izinController.updateStatusIzin);
+
 module.exports = router;

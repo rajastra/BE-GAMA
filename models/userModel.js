@@ -17,10 +17,6 @@ const User = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    username: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     password: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -29,10 +25,6 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: 'user',
-    },
-    photo: {
-      type: DataTypes.STRING,
-      allowNull: true,
     },
   },
   { timestamps: false }
@@ -45,6 +37,14 @@ Model.prototype.matchPassword = async function (enteredPassword) {
 const DEFAULT_SALT_ROUNDS = 10;
 
 User.addHook('beforeCreate', async (user) => {
+  const encryptedPassword = await bcrypt.hash(
+    user.password,
+    DEFAULT_SALT_ROUNDS
+  );
+  user.password = encryptedPassword;
+});
+
+User.addHook('beforeSave', async (user) => {
   const encryptedPassword = await bcrypt.hash(
     user.password,
     DEFAULT_SALT_ROUNDS

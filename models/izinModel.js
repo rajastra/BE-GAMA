@@ -9,10 +9,6 @@ const Izin = sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    nama: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     tgl_mulai: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -30,7 +26,7 @@ const Izin = sequelize.define(
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM('diajukan', 'diterima', 'ditolak'),
+      type: DataTypes.ENUM('diajukan', 'disetujui', 'ditolak'),
       allowNull: false,
       defaultValue: 'diajukan',
     },

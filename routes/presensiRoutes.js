@@ -8,6 +8,12 @@ router
   .get(presensiController.getAllPresensi)
   .post(presensiController.createPresensi);
 
+router.route('/recap').get(presensiController.getRecap);
+router.route('/dashboard').get(presensiController.getPresensiDB);
+router
+  .route('/check-attendance')
+  .post(presensiController.checkAttendanceStatus);
+
 router
   .route('/:id')
   .get(presensiController.getPresensi)

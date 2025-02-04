@@ -9,10 +9,6 @@ const Presensi = sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    nama: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     tgl_absensi: {
       type: DataTypes.DATE,
       allowNull: false,

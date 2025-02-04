@@ -9,7 +9,7 @@ const Pegawai = sequelize.define('Pegawai', {
   },
   nip: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
   nama: {
     type: DataTypes.STRING,
@@ -21,7 +21,7 @@ const Pegawai = sequelize.define('Pegawai', {
   },
   alamat: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
   jabatan: {
     type: DataTypes.STRING,
@@ -38,6 +38,8 @@ const Pegawai = sequelize.define('Pegawai', {
   foto: {
     type: DataTypes.STRING,
     allowNull: true,
+    defaultValue:
+      'https://res.cloudinary.com/dpoukjavt/image/upload/v1732288853/gama/images/1732288851200.png',
   },
 });
 
