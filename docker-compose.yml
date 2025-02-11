@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: gama-backend
+      POSTGRES_PASSWORD: gama571804
+      POSTGRES_DB: gama-database
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - 54321:5432
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: . # Use an image built from the specified dockerfile in the current directory.
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '5000:3000'
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: gama-backend
+      DB_PASSWORD: gama571804
+      DB_NAME: gama-database
+    volumes:
+      - .:/app
+      - /etc/letsencrypt:/etc/letsencrypt
+    networks:
+      - app-network
+
+volumes:
+  pgdata:
+
+networks:
+  app-network:
+    driver: bridge

@@ -36,13 +36,13 @@ Model.prototype.matchPassword = async function (enteredPassword) {
 
 const DEFAULT_SALT_ROUNDS = 10;
 
-User.addHook('beforeCreate', async (user) => {
-  const encryptedPassword = await bcrypt.hash(
-    user.password,
-    DEFAULT_SALT_ROUNDS
-  );
-  user.password = encryptedPassword;
-});
+// User.addHook('beforeCreate', async (user) => {
+//   const encryptedPassword = await bcrypt.hash(
+//     user.password,
+//     DEFAULT_SALT_ROUNDS
+//   );
+//   user.password = encryptedPassword;
+// });
 
 User.addHook('beforeSave', async (user) => {
   const encryptedPassword = await bcrypt.hash(
