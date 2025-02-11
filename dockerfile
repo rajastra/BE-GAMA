@@ -24,6 +24,8 @@ WORKDIR /app
 
 # Copy built application from builder stage
 COPY --from=builder /app /app
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/package.json /app/package.json
 
 # Expose port (change if your Express app runs on a different port)
 EXPOSE 3000
