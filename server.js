@@ -1,3 +1,5 @@
+const fs = require('fs');
+const https = require('https');
 const dotenv = require('dotenv');
 
 process.on('uncaughtException', (err) => {
