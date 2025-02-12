@@ -12,8 +12,8 @@ dotenv.config({
 const app = require('./app');
 
 const options = {
-  key: fs.readFileSync('/etc/letsencrypt/live/apps-api-gama-shop/privkey.pem'),
-  cert: fs.readFileSync('/etc/letsencrypt/live/apps-api-gama-shop/fullchain.pem')
+  key: fs.readFileSync('/etc/letsencrypt/live/apps-api-gama.shop/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/apps-api-gama.shop/fullchain.pem')
 };
 
 const PORT = process.env.PORT || 443;
