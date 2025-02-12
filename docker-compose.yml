@@ -20,7 +20,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - '4444:3000'
+      - '443:3000'
     depends_on:
       - db
     environment:
