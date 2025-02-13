@@ -7,23 +7,25 @@ services:
       POSTGRES_USER: gama-backend
       POSTGRES_PASSWORD: gama571804
       POSTGRES_DB: gama-database
+      TZ: Asia/Jakarta
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - 54321:5432
+      - "54321:5432"
     networks:
       - app-network
 
   backend:
     build:
-      context: . # Use an image built from the specified dockerfile in the current directory.
+      context: .  # Gunakan Dockerfile di direktori saat ini
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - '443:3000'
+      - "443:3000"
     depends_on:
       - db
     environment:
+      TZ: Asia/Jakarta
       DB_HOST: db
       DB_USER: gama-backend
       DB_PASSWORD: gama571804
