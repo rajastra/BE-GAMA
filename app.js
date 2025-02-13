@@ -64,7 +64,7 @@ Pegawai.hasMany(Izin, { foreignKey: 'pegawaiId' });
 Document.belongsTo(Pegawai, { foreignKey: 'pegawaiId' });
 Pegawai.hasMany(Document, { foreignKey: 'pegawaiId' });
 
-cron.schedule('00 18  * * 1-5', async () => {
+cron.schedule('00 23  * * 1-5', async () => {
   try {
     await axios.post(URL + `/api/v1/attendence/check-attendance`);
   } catch (error) {
