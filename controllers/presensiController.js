@@ -130,7 +130,7 @@ exports.getRecap = catchAsync(async (req, res, next) => {
 
   if (keyword) {
     pegawaiWhereClause.nama = {
-      [Op.iLike]: `%${keyword}%`,
+      [Op.like]: `%${keyword}%`,
     };
   }
 
@@ -292,6 +292,15 @@ exports.createPresensi = catchAsync(async (req, res, next) => {
     return next(
       new AppError('Employee already has attendance record for this date', 400)
     );
+  }
+
+  const inputDate = new Date(tgl_absensi).toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0];
+
+  if (inputDate > today || inputDate < today) {
+    console.log(inputDate);
+    console.log(today);
+    return next(new AppError('Date is not valid', 400));
   }
 
   const presensi = await Presensi.create({

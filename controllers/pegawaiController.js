@@ -18,7 +18,7 @@ exports.getAllPegawai = catchAsync(async (req, res, next) => {
         [Op.or]: [
           {
             nama: {
-              [Op.iLike]: `%${keyword}%`,
+              [Op.like]: `%${keyword}%`,
             },
           },
           {
@@ -28,7 +28,7 @@ exports.getAllPegawai = catchAsync(async (req, res, next) => {
           },
           {
             jabatan: {
-              [Op.iLike]: `%${keyword}%`,
+              [Op.like]: `%${keyword}%`,
             },
           },
         ],
