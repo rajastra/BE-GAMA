@@ -125,12 +125,12 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
         [Op.or]: [
           {
             email: {
-              [Op.iLike]: `%${keyword}%`,
+              [Op.like]: `%${keyword}%`,
             },
           },
           {
             '$Pegawai.nama$': {
-              [Op.iLike]: `%${keyword}%`,
+              [Op.like]: `%${keyword}%`,
             },
           },
         ],

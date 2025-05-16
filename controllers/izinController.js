@@ -23,7 +23,14 @@ const createPresensiWithRangeDate = async (izinData) => {
     const isWeekend = currentDate.days() === 0 || currentDate.days() === 6;
     const isHoliday = holidays.isHoliday(new Date(date));
 
-    if (!isWeekend && !isHoliday) {
+    const alreadyPresensi = await Presensi.findOne({
+      where: {
+        pegawaiId: izinData.pegawaiId,
+        tgl_absensi: new Date(date),
+      },
+    });
+
+    if (!isWeekend && !isHoliday && !alreadyPresensi) {
       const presensiData = {
         pegawaiId: izinData.pegawaiId,
         tgl_absensi: date,
@@ -53,7 +60,7 @@ exports.getAllIzin = catchAsync(async (req, res, next) => {
         [Op.or]: [
           {
             '$Pegawai.nama$': {
-              [Op.iLike]: `%${keyword}%`,
+              [Op.like]: `%${keyword}%`,
             },
           },
         ],
