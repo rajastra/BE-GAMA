@@ -25,12 +25,12 @@
     "no-unused-vars": ["error", { "argsIgnorePattern": "req|res|next|val" }],
     "import/no-extraneous-dependencies": ["off", { "devDependencies": true }]
 
-    // "node/no-unsupported-features/es-syntax": [
-    //   "off",
-    //   {
-    //     "version": ">=8.0.0",
-    //     "ignores": []
-    //   }
-    // ]
+    "node/no-unsupported-features/es-syntax": [
+      "off",
+      {
+        "version": ">=8.0.0",
+        "ignores": []
+      }
+    ]
   }
 }

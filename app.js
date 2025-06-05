@@ -20,6 +20,8 @@ const User = require('./models/userModel');
 const Pegawai = require('./models/pegawaiModel');
 const Presensi = require('./models/presensiModel');
 const Izin = require('./models/izinModel');
+const Siswa = require('./models/siswaModel');
+const siswaRouter = require('./routes/siswaRoutes');
 
 // test update
 const app = express();
@@ -40,6 +42,7 @@ app.use('/api/v1/employees', pegawaiRouter);
 app.use('/api/v1/attendence', presensiRouter);
 app.use('/api/v1/permissions', izinRouter);
 app.use('/api/v1/document', documentRouter);
+app.use('/api/v1/students', siswaRouter);
 
 app.use('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
@@ -63,6 +66,10 @@ Pegawai.hasMany(Izin, { foreignKey: 'pegawaiId' });
 //relasi pegawai dan dokumen
 Document.belongsTo(Pegawai, { foreignKey: 'pegawaiId' });
 Pegawai.hasMany(Document, { foreignKey: 'pegawaiId' });
+
+// relasi siswa ke user one to one
+User.hasOne(Siswa, { foreignKey: 'userId' });
+Siswa.belongsTo(User, { foreignKey: 'userId' }); 
 
 cron.schedule('00 18 * * 1-5', async () => {
   try {

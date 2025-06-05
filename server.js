@@ -27,7 +27,7 @@ const app = require('./app');
 // Alert => use this for env development
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
-  console.log(`Example app listening on port ${port}!`);
+  console.log(`app listening on port ${port}!`);
 });
 
 process.on('unhandledRejection', (err) => {
