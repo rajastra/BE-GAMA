@@ -5,41 +5,46 @@ const AppError = require('../utils/appError');
 
 const Siswa = require('../models/siswaModel');
 const User = require('../models/userModel');
+const Kelas = require('../models/kelasModel');
 const handlerFactory = require('./handlerFactory');
 require('dotenv').config();
 
 exports.getAllSiswa = catchAsync(async (req, res, next) => {
   const { page = 1, limit = 10, keyword = '' } = req.query;
 
-  const offset = (page - 1) * limit;
+  const pageNum = parseInt(page, 10) || 1;
+  const perPage = parseInt(limit, 10) || 10;
+  const offset = (pageNum - 1) * perPage;
 
-  let whereClause = {};
-  if (keyword) {
-    whereClause = {
-      where: {
+  // where untuk Siswa
+  const where = keyword
+    ? {
         [Op.or]: [
-          {
-            name: {
-              [Op.like]: `%${keyword}%`,
-            },
-          },
+          { name: { [Op.iLike]: `%${keyword}%` } }, // ganti ke Op.iLike kalau pakai Postgres
+          { nisn: { [Op.iLike]: `%${keyword}%` } }, // opsional: jika ada kolom nisn
         ],
-      },
-    };
-  }
+      }
+    : undefined;
 
-  const total = await Siswa.count(whereClause);
+  // include kelas aktif saja (end_date null)
+  const include = [
+    {
+      model: Kelas,
+      as: 'class',
+      attributes: ['id', 'name'],
+      required: false, // siswa tanpa kelas tetap muncul
+    },
+  ];
 
-  let findAllOptions = {
-    limit: parseInt(limit, 10),
-    offset: parseInt(offset, 10),
-  };
-
-  if (keyword) {
-    findAllOptions = Object.assign(findAllOptions, whereClause);
-  }
-
-  const siswa = await Siswa.findAll(findAllOptions);
+  // find + count dalam satu call
+  const { rows: siswa, count: total } = await Siswa.findAndCountAll({
+    where,
+    include,
+    limit: perPage,
+    offset,
+    order: [['name', 'ASC']],
+    distinct: true, // penting agar count tidak dobel karena join
+  });
 
   res.status(200).json({
     status: 'success',
@@ -47,8 +52,9 @@ exports.getAllSiswa = catchAsync(async (req, res, next) => {
     data: siswa,
     meta: {
       total,
-      per_page: parseInt(limit, 10),
-      current_page: parseInt(page, 10),
+      per_page: perPage,
+      current_page: pageNum,
+      total_pages: Math.ceil(total / perPage),
     },
   });
 });

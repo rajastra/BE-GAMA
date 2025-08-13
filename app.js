@@ -4,6 +4,8 @@ const axios = require('axios');
 const morgan = require('morgan');
 const cors = require('cors');
 const cron = require('node-cron');
+
+// import routes
 const userRouter = require('./routes/userRoutes');
 const galeriRouter = require('./routes/galeriRoutes');
 const imageRouter = require('./routes/imageRoutes');
@@ -14,14 +16,18 @@ const pegawaiRouter = require('./routes/pegawaiRoutes');
 const presensiRouter = require('./routes/presensiRoutes');
 const izinRouter = require('./routes/izinRoutes');
 const documentRouter = require('./routes/documentRoutes');
+const kelasRouter = require('./routes/kelasRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errController');
+
+// import models
 const User = require('./models/userModel');
 const Pegawai = require('./models/pegawaiModel');
 const Presensi = require('./models/presensiModel');
 const Izin = require('./models/izinModel');
 const Siswa = require('./models/siswaModel');
 const siswaRouter = require('./routes/siswaRoutes');
+const Kelas = require('./models/kelasModel');
 
 // test update
 const app = express();
@@ -43,6 +49,7 @@ app.use('/api/v1/attendence', presensiRouter);
 app.use('/api/v1/permissions', izinRouter);
 app.use('/api/v1/document', documentRouter);
 app.use('/api/v1/students', siswaRouter);
+app.use('/api/v1/classes', kelasRouter);
 
 app.use('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
@@ -69,7 +76,28 @@ Pegawai.hasMany(Document, { foreignKey: 'pegawaiId' });
 
 // relasi siswa ke user one to one
 User.hasOne(Siswa, { foreignKey: 'userId' });
-Siswa.belongsTo(User, { foreignKey: 'userId' }); 
+Siswa.belongsTo(User, { foreignKey: 'userId' });
+
+// Teacher 1..* Kelas
+Pegawai.hasMany(Kelas, {
+  foreignKey: 'pegawaiId',
+});
+
+Kelas.belongsTo(Pegawai, {
+  foreignKey: 'pegawaiId',
+  as: 'pegawai',
+});
+
+// Kelas 1..* Siswa
+Kelas.hasMany(Siswa, {
+  foreignKey: 'kelasId',
+  as: 'students',
+});
+
+Siswa.belongsTo(Kelas, {
+  foreignKey: 'kelasId',
+  as: 'class',
+});
 
 cron.schedule('00 18 * * 1-5', async () => {
   try {
