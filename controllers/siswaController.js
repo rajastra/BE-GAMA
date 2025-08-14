@@ -69,6 +69,7 @@ exports.createSiswa = catchAsync(async (req, res, next) => {
     nisn,
     gender,
     religion,
+    tgl_lahir,
     city_of_birth: cityOfBirth,
   } = req.body;
 
@@ -93,6 +94,7 @@ exports.createSiswa = catchAsync(async (req, res, next) => {
         nisn,
         gender,
         religion,
+        tgl_lahir,
         city_of_birth: cityOfBirth,
         userId: user.id, // assuming user.id is the foreign key
       },
@@ -116,10 +118,10 @@ exports.createSiswa = catchAsync(async (req, res, next) => {
 exports.updateSiswa = catchAsync(async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
-    // Lock hanya pada tabel Siswa
+    // Kunci baris siswa yang akan diupdate (row-level lock)
     const siswa = await Siswa.findByPk(req.params.id, {
       transaction: t,
-      lock: t.LOCK.UPDATE,
+      lock: t.LOCK.UPDATE, // atau lock: true tergantung dialect
     });
 
     if (!siswa) {
@@ -127,55 +129,49 @@ exports.updateSiswa = catchAsync(async (req, res, next) => {
       return next(new AppError('No document found with that ID', 404));
     }
 
-    // Update data siswa
-    await siswa.update(req.body, { transaction: t });
+    // Pisahkan field milik User dari body
+    const { name, email, password, ...siswaFields } = req.body;
 
-    // Ambil user terkait (tanpa lock)
+    // Update data Siswa saja dengan field tersisa
+    await siswa.update(siswaFields, { transaction: t });
+
+    // Ambil user terkait (tanpa lock tabel User)
     const user = await User.findByPk(siswa.userId, { transaction: t });
 
-    // Jika ada data user yang ingin diupdate (misal: name, email, password)
-    const { name, email } = req.body;
+    // Jika ada perubahan untuk User
     if (user && (name || email || password)) {
-      await user.update(
-        {
-          ...(name && { name }),
-          ...(email && { email }),
-        },
-        { transaction: t }
-      );
+      const userUpdate = {};
+      if (name) userUpdate.name = name;
+      if (email) userUpdate.email = email;
+      if (password) {
+        // hash password bila dikirim
+        userUpdate.password = await bcrypt.hash(password, 10);
+      }
+
+      // Hanya update bila memang ada field yang diubah
+      if (Object.keys(userUpdate).length > 0) {
+        await user.update(userUpdate, { transaction: t });
+      }
     }
 
     await t.commit();
 
-    // Ambil data terbaru setelah update (dengan relasi User)
+    // Ambil data terbaru, sembunyikan password
     const updatedSiswa = await Siswa.findByPk(req.params.id, {
-      include: [{ model: User }],
+      include: [{ model: User, attributes: { exclude: ['password'] } }],
     });
-
-    // Bersihkan response agar tidak circular
-    const siswaPlain = updatedSiswa.get({ plain: true });
-    const { User: userObj, ...siswaData } = siswaPlain;
-    const responseData = {
-      ...siswaData,
-      user: userObj
-        ? {
-            id: userObj.id,
-            name: userObj.name,
-            email: userObj.email,
-            role: userObj.role,
-          }
-        : null,
-    };
 
     res.status(200).json({
       status: 'success',
-      data: responseData,
+      data: updatedSiswa,
     });
   } catch (error) {
-    await t.rollback();
+    // Pastikan transaksi dibatalkan saat error
+    try { await t.rollback(); } catch (_) {}
     return next(error);
   }
 });
+
 
 exports.getSiswa = catchAsync(async (req, res, next) => {
   const siswa = await Siswa.findByPk(req.params.id, {

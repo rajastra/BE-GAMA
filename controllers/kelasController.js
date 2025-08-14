@@ -21,8 +21,8 @@ exports.getAllKelas = catchAsync(async (req, res, next) => {
   const where = {};
   if (keyword) {
     where[Op.or] = [
-      { name: { [Op.like]: `%${keyword}%` } },
-      { grade: { [Op.like]: `%${keyword}%` } },
+      { name: { [Op.iLike]: `%${keyword}%` } },
+      { grade: { [Op.iLike]: `%${keyword}%` } },
     ];
   }
   if (pegawaiId) where.pegawaiId = pegawaiId;

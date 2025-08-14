@@ -31,6 +31,10 @@ const Siswa = sequelize.define('Siswa', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  tgl_lahir: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
   city_of_birth: {
     type: DataTypes.STRING,
     allowNull: true,
