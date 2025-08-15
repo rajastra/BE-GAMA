@@ -20,4 +20,6 @@ router
   .patch(kelasController.updateKelas) // PATCH update kelas
   .delete(kelasController.deleteKelas); // DELETE kelas
 
+router.get('/:id/students/not-in', kelasController.getStudentsNotInClass);
+
 module.exports = router;

@@ -106,22 +106,87 @@ exports.updateKelas = catchAsync(async (req, res, next) => {
  * GET /kelas/:id
  */
 exports.getKelas = catchAsync(async (req, res, next) => {
-  const kelas = await Kelas.findByPk(req.params.id, {
+  const { id } = req.params;
+
+  // Ambil kelas + wali kelas (pegawai)
+  const kelas = await Kelas.findByPk(id, {
     include: [
       {
         model: Pegawai,
         as: 'pegawai',
         attributes: ['id', 'nama', 'nip', 'jabatan'],
       },
-      { model: Siswa, as: 'students' },
     ],
   });
 
   if (!kelas) return next(new AppError('Kelas tidak ditemukan.', 404));
 
+  // --- Query params ---
+  const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+  const limitRaw = parseInt(req.query.limit, 10);
+  const limit = Math.min(Math.max(limitRaw || 10, 1), 100);
+  const offset = (page - 1) * limit;
+
+  const q = (req.query.keyword || '').trim();
+
+  // Whitelist kolom sort agar aman
+  const ALLOWED_SORT = [
+    'id',
+    'name',
+    'gender',
+    'religion',
+    'city_of_birth',
+    'createdAt',
+    'updatedAt',
+  ];
+  const sortBy = ALLOWED_SORT.includes(req.query.sortBy)
+    ? req.query.sortBy
+    : 'name';
+  const order =
+    (req.query.order || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+  // --- Filter siswa di kelas ini + pencarian ---
+  const whereSiswa = { kelasId: id };
+  if (q) {
+    // Postgres: iLike untuk case-insensitive
+    whereSiswa.name = { [Op.iLike]: `%${q}%` };
+  }
+
+  // --- Ambil siswa dengan pagination ---
+  const { rows: studentRows, count: total } = await Siswa.findAndCountAll({
+    where: whereSiswa,
+    order: [[sortBy, order]],
+    limit,
+    offset,
+    // attributes: { exclude: ['password'] }, // jika ada kolom sensitif
+  });
+
+  const totalPages = Math.max(Math.ceil(total / limit), 1);
+
+  // Susun payload: data kelas + blok students ter-paginate
+  const payload = {
+    ...kelas.toJSON(),
+    students: {
+      rows: studentRows,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasPrev: page > 1,
+        hasNext: page < totalPages,
+      },
+      query: {
+        q: q || null,
+        sortBy,
+        order,
+      },
+    },
+  };
+
   res.status(200).json({
     status: 'success',
-    data: kelas,
+    data: payload,
   });
 });
 
@@ -197,6 +262,105 @@ exports.addStudentsBatch = catchAsync(async (req, res, next) => {
     notFound: {
       count: notFound.length,
       ids: notFound,
+    },
+  });
+});
+
+exports.getStudentsNotInClass = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  // Pastikan kelas ada (opsional, tapi bagus untuk validasi)
+  const kelas = await Kelas.findByPk(id, { attributes: ['id', 'name'] });
+  if (!kelas) return next(new AppError('Kelas tidak ditemukan.', 404));
+
+  // --- Query params ---
+  const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+  const limitRaw = parseInt(req.query.limit, 10);
+  const limit = Math.min(Math.max(limitRaw || 10, 1), 100);
+  const offset = (page - 1) * limit;
+
+  const q = (req.query.keyword || '').trim();
+  const onlyUnassigned =
+    String(req.query.onlyUnassigned || 'false').toLowerCase() === 'true';
+
+  const ALLOWED_SORT = ['id', 'nis', 'name', 'createdAt', 'updatedAt'];
+  const sortBy = ALLOWED_SORT.includes(req.query.sortBy)
+    ? req.query.sortBy
+    : 'name';
+  const order =
+    (req.query.order || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+  // exclude=1,2,3
+  const excludeIds = (req.query.exclude || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map(Number)
+    .filter(Number.isFinite);
+
+  // --- WHERE ---
+  const where = {};
+
+  // Tidak berada di kelas ini:
+  // Perlu OR agar siswa kelasId NULL juga ikut (NULL != id bukan TRUE).
+  if (onlyUnassigned) {
+    where.kelasId = { [Op.is]: null };
+  } else {
+    where[Op.or] = [
+      { kelasId: { [Op.ne]: id } },
+      { kelasId: { [Op.is]: null } },
+    ];
+  }
+
+  if (q) {
+    where[Op.and] = [
+      ...(where[Op.and] || []),
+      {
+        [Op.or]: [
+          { name: { [Op.iLike]: `%${q}%` } }, // Postgres
+          { nis: { [Op.iLike]: `%${q}%` } },
+        ],
+      },
+    ];
+  }
+
+  if (excludeIds.length) {
+    where.id = { [Op.notIn]: excludeIds };
+  }
+
+  // --- Query ---
+  const { rows, count: total } = await Siswa.findAndCountAll({
+    where,
+    order: [[sortBy, order]],
+    limit,
+    offset,
+    // attributes: ['id','nis','name','gender'] // sesuaikan bila perlu
+  });
+
+  const totalPages = Math.max(Math.ceil(total / limit), 1);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      class: kelas, // { id, nama }
+      students: {
+        rows,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages,
+          hasPrev: page > 1,
+          hasNext: page < totalPages,
+        },
+        query: {
+          q: q || null,
+          sortBy,
+          order,
+          onlyUnassigned,
+          exclude: excludeIds,
+        },
+      },
     },
   });
 });
