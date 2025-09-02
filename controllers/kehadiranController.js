@@ -52,7 +52,7 @@ exports.getHarianByClass = catchAsync(async (req, res, next) => {
 
   // --- where utama ---
   const where = { date: dateFilter };
-  if (classId) where.classId = classId;
+  if (classId) where.kelasId = classId;
 
   // --- include + filter nama siswa ---
   const include = [
