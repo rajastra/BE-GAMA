@@ -21,6 +21,8 @@ const documentRouter = require('./routes/documentRoutes');
 const kelasRouter = require('./routes/kelasRoutes');
 const kehadiranRouter = require('./routes/kehadiranRoutes');
 const subjectRouter = require('./routes/subjectRoutes');
+const classSubjectRouter = require('./routes/classSubjectRoutes');
+const termRouter = require('./routes/termRoutes');
 
 // import models
 const User = require('./models/userModel');
@@ -35,7 +37,7 @@ const Subject = require('./models/subjectModel');
 const ClassSubject = require('./models/classSubjectModel');
 const Term = require('./models/termModel');
 const GradingPolicy = require('./models/gradingPolicyModel');
-const Assessment = require('./models/AssesmentModel');
+const Assessment = require('./models/assesmentModel');
 const Score = require('./models/scoreModel');
 
 // test update
@@ -61,6 +63,8 @@ app.use('/api/v1/students', siswaRouter);
 app.use('/api/v1/classes', kelasRouter);
 app.use('/api/v1/kehadiran', kehadiranRouter);
 app.use('/api/v1/subjects', subjectRouter);
+app.use('/api/v1', classSubjectRouter);
+app.use('/api/v1/terms', termRouter);
 
 app.use('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
@@ -124,11 +128,17 @@ ClassSubject.belongsTo(Kelas, { as: 'class', foreignKey: 'classId' });
 ClassSubject.belongsTo(Subject, { as: 'subject', foreignKey: 'subjectId' });
 
 // grading policy
-GradingPolicy.belongsTo(ClassSubject, { as: 'classSubject', foreignKey: 'classSubjectId' });
+GradingPolicy.belongsTo(ClassSubject, {
+  as: 'classSubject',
+  foreignKey: 'classSubjectId',
+});
 GradingPolicy.belongsTo(Term, { as: 'term', foreignKey: 'termId' });
 
 // assesment
-Assessment.belongsTo(ClassSubject, { as: 'classSubject', foreignKey: 'classSubjectId' });
+Assessment.belongsTo(ClassSubject, {
+  as: 'classSubject',
+  foreignKey: 'classSubjectId',
+});
 Assessment.belongsTo(Term, { as: 'term', foreignKey: 'termId' });
 
 // score
