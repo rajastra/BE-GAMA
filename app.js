@@ -6,6 +6,8 @@ const cors = require('cors');
 const cron = require('node-cron');
 
 // import routes
+const AppError = require('./utils/appError');
+const globalErrorHandler = require('./controllers/errController');
 const userRouter = require('./routes/userRoutes');
 const galeriRouter = require('./routes/galeriRoutes');
 const imageRouter = require('./routes/imageRoutes');
@@ -17,9 +19,8 @@ const presensiRouter = require('./routes/presensiRoutes');
 const izinRouter = require('./routes/izinRoutes');
 const documentRouter = require('./routes/documentRoutes');
 const kelasRouter = require('./routes/kelasRoutes');
-const kehadiranRouter = require('./routes/kehadiranRoutes')
-const AppError = require('./utils/appError');
-const globalErrorHandler = require('./controllers/errController');
+const kehadiranRouter = require('./routes/kehadiranRoutes');
+const subjectRouter = require('./routes/subjectRoutes');
 
 // import models
 const User = require('./models/userModel');
@@ -30,6 +31,8 @@ const Siswa = require('./models/siswaModel');
 const siswaRouter = require('./routes/siswaRoutes');
 const Kelas = require('./models/kelasModel');
 const Kehadiran = require('./models/kehadiranModel');
+const Subject = require('./models/subjectModel');
+const ClassSubject = require('./models/classSubjectModel');
 
 // test update
 const app = express();
@@ -52,7 +55,8 @@ app.use('/api/v1/permissions', izinRouter);
 app.use('/api/v1/document', documentRouter);
 app.use('/api/v1/students', siswaRouter);
 app.use('/api/v1/classes', kelasRouter);
-app.use('/api/v1/kehadiran', kehadiranRouter)
+app.use('/api/v1/kehadiran', kehadiranRouter);
+app.use('/api/v1/subjects', subjectRouter);
 
 app.use('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
@@ -110,6 +114,10 @@ Siswa.hasMany(Kehadiran, { foreignKey: 'siswaId' });
 Kehadiran.belongsTo(Kelas, { foreignKey: 'kelasId', as: 'kelas' });
 
 Kehadiran.belongsTo(Siswa, { foreignKey: 'siswaId', as: 'siswa' });
+
+// class subject
+ClassSubject.belongsTo(Kelas, { as: 'class', foreignKey: 'classId' });
+ClassSubject.belongsTo(Subject, { as: 'subject', foreignKey: 'subjectId' });
 
 cron.schedule('00 18 * * 1-5', async () => {
   try {
