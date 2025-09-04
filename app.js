@@ -33,6 +33,10 @@ const Kelas = require('./models/kelasModel');
 const Kehadiran = require('./models/kehadiranModel');
 const Subject = require('./models/subjectModel');
 const ClassSubject = require('./models/classSubjectModel');
+const Term = require('./models/termModel');
+const GradingPolicy = require('./models/gradingPolicyModel');
+const Assessment = require('./models/AssesmentModel');
+const Score = require('./models/scoreModel');
 
 // test update
 const app = express();
@@ -118,6 +122,18 @@ Kehadiran.belongsTo(Siswa, { foreignKey: 'siswaId', as: 'siswa' });
 // class subject
 ClassSubject.belongsTo(Kelas, { as: 'class', foreignKey: 'classId' });
 ClassSubject.belongsTo(Subject, { as: 'subject', foreignKey: 'subjectId' });
+
+// grading policy
+GradingPolicy.belongsTo(ClassSubject, { as: 'classSubject', foreignKey: 'classSubjectId' });
+GradingPolicy.belongsTo(Term, { as: 'term', foreignKey: 'termId' });
+
+// assesment
+Assessment.belongsTo(ClassSubject, { as: 'classSubject', foreignKey: 'classSubjectId' });
+Assessment.belongsTo(Term, { as: 'term', foreignKey: 'termId' });
+
+// score
+Score.belongsTo(Assessment, { as: 'assessment', foreignKey: 'assessmentId' });
+Score.belongsTo(Siswa, { as: 'student', foreignKey: 'studentId' });
 
 cron.schedule('00 18 * * 1-5', async () => {
   try {
